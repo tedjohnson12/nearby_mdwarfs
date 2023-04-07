@@ -1,2 +1,1 @@
-# nearby_mdwarfs
-Use the NExScI Exoplanet Database to create a figure showing nearby rocky planets around M dwarfs.
+<img src='nearby_mdwarfs_insolation.png'>
