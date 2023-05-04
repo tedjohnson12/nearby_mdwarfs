@@ -62,6 +62,14 @@ if __name__ in '__main__':
     x_kw = 'sy_dist'
     y_kw = 'pl_approx_insol'
 
+    # get some demographics for Ravi
+    within_10 = df['sy_dist'] <= 10
+    within_20 = df['sy_dist'] <= 20
+    print(f'There are {len(df.loc[~is_transit & keep & within_10])} non-transiting exoplanets within 10 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
+    print(f'There are {len(df.loc[~is_transit & keep & within_20])} non-transiting exoplanets within 20 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
+    print(f'There are {len(df.loc[is_transit & keep & within_10])} transiting exoplanets within 10 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
+    print(f'There are {len(df.loc[is_transit & keep & within_20])} transiting exoplanets within 20 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
+
     ax.scatter(df.loc[~is_transit & keep,x_kw],(df.loc[~is_transit & keep,y_kw]),label='Non-Transiting',c='C0',s=k*(df.loc[~is_transit & keep,'pl_bmasse']),alpha=alpha)
     ax.scatter(df.loc[is_transit & keep,x_kw],(df.loc[is_transit & keep,y_kw]),label='Transiting',c='C4',s=k*(df.loc[is_transit & keep,'pl_bmasse']),alpha=alpha)
     ax.scatter(np.nan,-1,label='Mars-mass',c='k',s=k*0.107,alpha=alpha)
