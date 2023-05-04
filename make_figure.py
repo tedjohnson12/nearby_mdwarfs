@@ -49,8 +49,10 @@ if __name__ in '__main__':
     with open(filename,'r') as file:
         date = file.readline()[1:-1]
     dist_from_bottom = 0.05
-    fig.text(0.01,dist_from_bottom,'NASA Exoplanet Archive '+date,fontfamily='serif',fontsize=14,weight='normal')
-    fig.text(0.9,dist_from_bottom, 'Created by: Ted Johnson (GSFC)',fontfamily='serif',fontsize=14,ha='right',weight='normal')
+    print('NASA Exoplanet Archive '+date)
+    # fig.text(0.01,dist_from_bottom,'NASA Exoplanet Archive '+date,fontfamily='serif',fontsize=14,weight='normal')
+    print('Created by: Ted Johnson (GSFC)')
+    # fig.text(0.9,dist_from_bottom, 'Created by: Ted Johnson (GSFC)',fontfamily='serif',fontsize=14,ha='right',weight='normal')
 
     alpha=0.5 # transparency
     k = 20 # scales size of markers
@@ -110,6 +112,6 @@ if __name__ in '__main__':
     ax.set_xlabel('Distance (pc)',fontfamily='serif',fontsize=14,fontweight='bold')
     ax.set_ylabel('Stellar Insolation Flux\n(relative to Earth)',fontfamily='serif',fontsize=14,fontweight='bold')
     # ax.set_yticks([0.5,0,5,10,50,100])
-    ax.set_title('Known Planets Around M-stars Within 20 pc',fontsize=14,fontfamily='serif',fontweight='bold')
+    # ax.set_title('Known Planets Around M-stars Within 20 pc',fontsize=14,fontfamily='serif',fontweight='bold')
     fig.savefig('nearby_mdwarfs_insolation.png',dpi=120)
     # ax.get_yticks()
