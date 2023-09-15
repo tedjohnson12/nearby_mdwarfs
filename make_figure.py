@@ -1,5 +1,5 @@
 """
-Script that creates querys the NExScI database
+Script that querys the NExScI database
 and creates a figure based on the data.
 
 Created by Ted Johnson (NASA GSFC 693) in Oct 2022,
@@ -15,6 +15,23 @@ from os import chdir
 from datetime import datetime
 from astropy import units as u, constants as c
 import requests
+
+def size(mass:float):
+    """
+    Determine marker size based on the planet's mass
+
+    Parameters
+    ----------
+    mass : float
+        The planet's mass relative to Earth.
+    
+    Returns
+    -------
+    float
+        The marker size.
+    """
+    k = 30 # scales size of markers
+    return k*mass
 
 if __name__ in '__main__':
 
@@ -42,10 +59,14 @@ if __name__ in '__main__':
     df.loc[is_gj667c,'st_rad'] = 0.42
     df['pl_approx_insol'] = 10**(df['st_lum']) / (df['pl_orbsmax'])**2
 
+    # get MIRECLE target list
+    # From Avi 09/2023
+    mirecle = pd.read_csv('mirecle_targets.txt',names=['name'])
+
     # make the figure
     plt.style.use('bmh')
     rc('font', weight='bold')
-    fig,ax = plt.subplots(1,1,figsize=(11.5,6.5))
+    fig,ax = plt.subplots(1,1,figsize=(12.5,7))
     ax.tick_params(axis='both', which='major', labelsize=14)
 
     #get date
@@ -62,8 +83,11 @@ if __name__ in '__main__':
     is_transit = df['tran_flag'].values.astype('bool')
     keep  = (df['pl_orbper'] < 25) & has_all & (df['pl_bmasse'] < 20) & (df['pl_approx_insol'] < 100)
 
+    in_mirecle = df.loc[:,'pl_name'].isin(mirecle['name'])
+
     x_kw = 'sy_dist'
     y_kw = 'pl_approx_insol'
+    size_kw = 'pl_bmasse'
 
     # get some demographics for Ravi
     within_10 = df['sy_dist'] <= 10
@@ -73,11 +97,12 @@ if __name__ in '__main__':
     print(f'There are {len(df.loc[is_transit & keep & within_10])} transiting exoplanets within 10 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
     print(f'There are {len(df.loc[is_transit & keep & within_20])} transiting exoplanets within 20 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
 
-    ax.scatter(df.loc[~is_transit & keep,x_kw],(df.loc[~is_transit & keep,y_kw]),label='Non-Transiting',c='C0',s=k*(df.loc[~is_transit & keep,'pl_bmasse']),alpha=alpha)
-    ax.scatter(df.loc[is_transit & keep,x_kw],(df.loc[is_transit & keep,y_kw]),label='Transiting',c='C4',s=k*(df.loc[is_transit & keep,'pl_bmasse']),alpha=alpha)
-    ax.scatter(np.nan,-1,label='Mars-mass',c='k',s=k*0.107,alpha=alpha)
-    ax.scatter(np.nan,-1,label='Earth-mass',c='k',s=k*1,alpha=alpha)
-    ax.scatter(np.nan,-1,label='Neptune-mass',c='k',s=k*17.15,alpha=alpha)
+    ax.scatter(df.loc[~is_transit & keep,x_kw],(df.loc[~is_transit & keep,y_kw]),label='Non-Transiting',c='C0',s=size(df.loc[~is_transit & keep,size_kw]),alpha=alpha)
+    ax.scatter(df.loc[is_transit & keep,x_kw],(df.loc[is_transit & keep,y_kw]),label='Transiting',c='C4',s=size(df.loc[is_transit & keep,size_kw]),alpha=alpha)
+    ax.scatter(df.loc[in_mirecle & keep, x_kw],df.loc[in_mirecle & keep, y_kw],label='MIRECLE Targets',facecolors='none',edgecolors='k',linewidth=1.5,s=size(df.loc[in_mirecle & keep, size_kw]),alpha=alpha)
+    ax.scatter(np.nan,-1,label='Mars-mass',c='k',s=size(0.107),alpha=alpha)
+    ax.scatter(np.nan,-1,label='Earth-mass',c='k',s=size(1),alpha=alpha)
+    ax.scatter(np.nan,-1,label='Neptune-mass',c='k',s=size(17.15),alpha=alpha)
 
     lw=1
     ls=(0,(5,10))
