@@ -11,9 +11,10 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import pandas as pd
 from pathlib import Path
-from os import system, chdir
+from os import chdir
 from datetime import datetime
 from astropy import units as u, constants as c
+import requests
 
 if __name__ in '__main__':
 
@@ -25,11 +26,13 @@ if __name__ in '__main__':
     query = '+'.join(q.split(' '))+'&format=csv'
     url = f'https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query={query}'
     print(f'Querying {url}')
+    response = requests.get(url)
     # write the file
     filename = 'nearby_mdwarfs.csv'
     with open(filename,'w') as file:
         file.write(f'# {datetime.now().strftime("%Y/%m/%d %H:%M")}\n')
-    system(f'wget "{url}" -O ->> nearby_mdwarfs.csv')
+        file.write(response.text)
+     
 
     #read the data
     df = pd.read_csv('nearby_mdwarfs.csv',comment='#')
