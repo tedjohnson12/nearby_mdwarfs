@@ -16,6 +16,9 @@ from datetime import datetime
 from astropy import units as u, constants as c
 import requests
 
+MAX_TEFF = 20000 # K
+MAX_DIST = 20 # pc
+
 def size(mass:float):
     """
     Determine marker size based on the planet's mass
@@ -30,7 +33,7 @@ def size(mass:float):
     float
         The marker size.
     """
-    k = 30 # scales size of markers
+    k = 50 # scales size of markers
     return k*mass
 
 if __name__ in '__main__':
@@ -39,7 +42,7 @@ if __name__ in '__main__':
     chdir(WORKING_DIRECTORY)
 
     # Build the query
-    q = 'select * from pscomppars where st_teff < 3700 and sy_dist < 20'
+    q = f'select * from pscomppars where st_teff < {MAX_TEFF} and sy_dist < {MAX_DIST}'
     query = '+'.join(q.split(' '))+'&format=csv'
     url = f'https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query={query}'
     print(f'Querying {url}')
@@ -74,7 +77,7 @@ if __name__ in '__main__':
         date = file.readline()[1:-1]
     dist_from_bottom = 0.05
     fig.text(0.01,dist_from_bottom,'NASA Exoplanet Archive '+date,fontfamily='serif',fontsize=14,weight='normal')
-    fig.text(0.9,dist_from_bottom, 'Created by: Ted Johnson (GSFC)',fontfamily='serif',fontsize=14,ha='right',weight='normal')
+    fig.text(0.9,dist_from_bottom, 'Created by: Ted Johnson (GSFC/UNLV)',fontfamily='serif',fontsize=14,ha='right',weight='normal')
 
     alpha=0.5 # transparency
     k = 20 # scales size of markers
@@ -87,22 +90,21 @@ if __name__ in '__main__':
 
     x_kw = 'sy_dist'
     y_kw = 'pl_approx_insol'
+    c_kw = 'st_teff'
     size_kw = 'pl_bmasse'
 
     # get some demographics for Ravi
     within_10 = df['sy_dist'] <= 10
     within_20 = df['sy_dist'] <= 20
-    print(f'There are {len(df.loc[~is_transit & keep & within_10])} non-transiting exoplanets within 10 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
-    print(f'There are {len(df.loc[~is_transit & keep & within_20])} non-transiting exoplanets within 20 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
-    print(f'There are {len(df.loc[is_transit & keep & within_10])} transiting exoplanets within 10 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
-    print(f'There are {len(df.loc[is_transit & keep & within_20])} transiting exoplanets within 20 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
+    print(f'There are {len(df.loc[keep & within_10])} exoplanets within 10 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
+    print(f'There are {len(df.loc[keep & within_20])} exoplanets within 20 pc (Porbit < 20 days, Mass < 20 Mearth, Insolation < 100 Iearth)')
 
-    ax.scatter(df.loc[~is_transit & keep,x_kw],(df.loc[~is_transit & keep,y_kw]),label='Non-Transiting',c='C0',s=size(df.loc[~is_transit & keep,size_kw]),alpha=alpha)
-    ax.scatter(df.loc[is_transit & keep,x_kw],(df.loc[is_transit & keep,y_kw]),label='Transiting',c='C4',s=size(df.loc[is_transit & keep,size_kw]),alpha=alpha)
-    ax.scatter(df.loc[in_mirecle & keep, x_kw],df.loc[in_mirecle & keep, y_kw],label='MIRECLE Targets',facecolors='none',edgecolors='k',linewidth=1.5,s=size(df.loc[in_mirecle & keep, size_kw]),alpha=alpha)
+    im = ax.scatter(df.loc[keep,x_kw],df.loc[keep,y_kw],c=df.loc[keep,c_kw],cmap='gist_heat',s=size(df.loc[keep,size_kw]),alpha=alpha,edgecolors='k')
     ax.scatter(np.nan,-1,label='Mars-mass',c='k',s=size(0.107),alpha=alpha)
     ax.scatter(np.nan,-1,label='Earth-mass',c='k',s=size(1),alpha=alpha)
     ax.scatter(np.nan,-1,label='Neptune-mass',c='k',s=size(17.15),alpha=alpha)
+    
+    fig.colorbar(im,ax=ax,label=r'$T_{\mathrm{eff}}$ [K]',pad=0.05,fraction=0.07)
 
     lw=1
     ls=(0,(5,10))
@@ -131,13 +133,13 @@ if __name__ in '__main__':
     ax.set_yscale('log')
 
     lgnd = ax.legend(prop={'size':14,'family':'serif'},framealpha=0.7,loc='lower right')
-    legend_marker_size = 40
-    lgnd.legendHandles[0]._sizes = [legend_marker_size]
-    lgnd.legendHandles[1]._sizes = [legend_marker_size]
+    # legend_marker_size = 40
+    # lgnd.legend_handles[0]._sizes = [legend_marker_size]
+    # lgnd.legend_handles[1]._sizes = [legend_marker_size]
 
     ax.set_xlabel('Distance (pc)',fontfamily='serif',fontsize=14,fontweight='bold')
     ax.set_ylabel('Stellar Insolation Flux\n(relative to Earth)',fontfamily='serif',fontsize=14,fontweight='bold')
     # ax.set_yticks([0.5,0,5,10,50,100])
-    ax.set_title('Known Planets Around M-stars Within 20 pc',fontsize=14,fontfamily='serif',fontweight='bold')
+    ax.set_title(f'Known Planets Around Stars Within {MAX_DIST} pc',fontsize=14,fontfamily='serif',fontweight='bold')
     fig.savefig('nearby_mdwarfs_insolation.png',dpi=120)
     # ax.get_yticks()
