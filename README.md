@@ -3,13 +3,13 @@
 To get this figure, run:
 
 ```bash
->>> python make_figure.py
+$ python make_figure.py
 ```
 
 There are also a variety of options:
 
 ```bash
-python make_figure.py -h
+$ python make_figure.py -h
 
 usage: python make_figure.py [-h] [-t MAX_TEFF] [-d MAX_DIST] [-o OUTPUT] [-p MAX_PERIOD] [-m MAX_MASS] [-i MAX_INSOL]
                              [-s SIZE] [-a ALPHA] [--mirecle]
