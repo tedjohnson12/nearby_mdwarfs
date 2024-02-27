@@ -269,7 +269,7 @@ def add_labels(_ax: plt.Axes,max_dist: float):
                    fontsize=14, fontweight='bold')
     _ax.set_ylabel('Stellar Insolation Flux\n(relative to Earth)',
                    fontfamily='serif', fontsize=14, fontweight='bold')
-    _ax.set_title(f'Known Planets Within {max_dist:g} pc',
+    _ax.set_title(f'Selection of Planets Within {max_dist:g} pc',
                   fontsize=14, fontfamily='serif', fontweight='bold')
 
 
@@ -285,7 +285,7 @@ if __name__ in '__main__':
     parser.add_argument('-d', '--max_dist', type=float,
                         default=20, help='Maximum distance in parsecs')
     parser.add_argument('-o', '--output', type=str,
-                        default='nearby_exoplanets.png', help='Output filename')
+                        default='nearby_exoplanets.pdf', help='Output filename')
     parser.add_argument('-p', '--max_period', type=float,
                         default=25, help='Maximum orbital period in days')
     parser.add_argument('-m', '--max_mass', type=float,
