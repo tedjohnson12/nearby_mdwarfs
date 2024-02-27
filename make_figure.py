@@ -285,7 +285,7 @@ if __name__ in '__main__':
     parser.add_argument('-d', '--max_dist', type=float,
                         default=20, help='Maximum distance in parsecs')
     parser.add_argument('-o', '--output', type=str,
-                        default='nearby_exoplanets.pdf', help='Output filename')
+                        default='nearby_exoplanets.svg', help='Output filename')
     parser.add_argument('-p', '--max_period', type=float,
                         default=25, help='Maximum orbital period in days')
     parser.add_argument('-m', '--max_mass', type=float,
