@@ -113,10 +113,24 @@ def get_mirecle_targets() -> pd.DataFrame:
     mirecle_list = pd.read_csv(path, names=['name'])
     return mirecle_list
 
+def get_hwo_targets() -> pd.DataFrame:
+    """
+    Get the HWO target list from Table A
+    of https://exoplanetarchive.ipac.caltech.edu/docs/2645_NASA_ExEP_Target_List_HWO_Documentation_2023.pdf
+    
+    Returns
+    -------
+    pd.DataFrame
+        The HWO target list.
+    """
+    path = Path(__file__).parent / 'hwo_targets.txt'
+    hwo_list = pd.read_csv(path,engine='python')
+    return hwo_list
+
 
 def print_demographics(_df):
     """
-    Prind some demographics for Ravi.
+    Print some demographics for Ravi.
 
     Parameters
     ----------
@@ -153,6 +167,7 @@ def plot(
     _df: pd.DataFrame,
     _ax: plt.Axes,
     plot_mirecle: bool,
+    plot_hwo: bool,
     size_func: Callable,
     _alpha: float
 ):
@@ -167,14 +182,24 @@ def plot(
         The axes to plot on
     plot_mirecle : bool
         Whether to plot the MIRECLE targets
+    plot_hwo : bool
+        Whether to plot the HWO target list
     size_func : function
         The function to determine the marker size
     _alpha : float
         The marker transparency
     """
+    if plot_hwo and plot_mirecle:
+        raise ValueError('Please only choose one of HWO or MIRECLE.')
     is_transit = _df['tran_flag'].values.astype('bool')
     mirecle_target_list = get_mirecle_targets()
+    hwo_target_list = get_hwo_targets()
     in_mirecle = _df.loc[:, 'pl_name'].isin(mirecle_target_list['name'])
+    in_hwo = (
+        _df.loc[:, 'hip_name'].isin(hwo_target_list['ID(HIP)'])
+        | _df.loc[:, 'hd_name'].isin(hwo_target_list['ID(HD)'])
+        | _df.loc[:, 'hostname'].isin(hwo_target_list['Common Name'])
+    )
     x_kw = 'sy_dist'
     y_kw = 'pl_approx_insol'
     size_kw = 'pl_bmasse'
@@ -186,6 +211,9 @@ def plot(
     if plot_mirecle:
         _ax.scatter(_df.loc[in_mirecle, x_kw], _df.loc[in_mirecle, y_kw], label='MIRECLE Targets', facecolors='none',
                     edgecolors='k', linewidth=1.5, s=size_func(_df.loc[in_mirecle, size_kw]), alpha=_alpha)
+    if plot_hwo:
+        _ax.scatter(_df.loc[in_hwo, x_kw], _df.loc[in_hwo, y_kw], label='HWO Targets', facecolors='none',
+                    edgecolors='k', linewidth=1.5, s=size_func(_df.loc[in_hwo, size_kw]), alpha=_alpha)
     _ax.scatter(np.nan, -1, label='Mars-mass', c='k',
                 s=size_func(0.107), alpha=_alpha)
     _ax.scatter(np.nan, -1, label='Earth-mass',
@@ -298,6 +326,8 @@ if __name__ in '__main__':
                         default=0.5, help='Transparency')
     parser.add_argument('--mirecle', action='store_true',
                         help='Include MIRECLE target list')
+    parser.add_argument('--hwo', action='store_true',
+                        help='Include HWO target list')
 
     args = parser.parse_args()
 
@@ -333,7 +363,7 @@ if __name__ in '__main__':
         k = 30*args.size  # scales size of markers
         return k*mass
 
-    plot(df, ax, args.mirecle, size, alpha)
+    plot(df, ax, args.mirecle, args.hwo, size, alpha)
     add_solar_system_planets(ax)
     add_legend(ax, size)
     add_labels(ax, args.max_dist)
