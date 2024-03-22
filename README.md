@@ -34,6 +34,7 @@ options:
   -a ALPHA, --alpha ALPHA
                         Transparency
   --mirecle             Include MIRECLE target list
+  --hwo                 Include HWO target list
 
 Created by: Ted Johnson (GSFC 693) in Oct 2022, uploaded to Github 2023-04-07
 ```
