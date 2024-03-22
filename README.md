@@ -1,4 +1,4 @@
-<img src='nearby_exoplanets.png'>
+<img src='nearby_exoplanets.svg'>
 
 To get this figure, run:
 
