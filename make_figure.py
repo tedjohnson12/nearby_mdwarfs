@@ -92,6 +92,8 @@ def apply_corrections(
     is_gj667c = _df['hostname'] == 'GJ 667 C'
     _df.loc[is_gj667c, 'st_rad'] = 0.42
     _df['pl_approx_insol'] = 10**(_df['st_lum']) / (_df['pl_orbsmax'])**2
+    t_eq_earth = 255
+    _df['pl_eqt'] = t_eq_earth * _df['pl_approx_insol']**(1/4)
 
     has_all = ~np.isnan(_df['sy_dist']) & ~np.isnan(
         _df['pl_bmasse']) & ~np.isnan(_df['pl_orbper'])
@@ -144,7 +146,7 @@ def print_demographics(_df):
         f'There are {n_transit} transiting exoplanets and {n_nontransit} non-transiting exoplanets.')
 
 
-def setup_fig():
+def setup_fig(credit=True):
     """
     Set up the figure.
     """
@@ -157,8 +159,9 @@ def setup_fig():
     dist_from_bottom = 0.05
     _fig.text(0.4, dist_from_bottom, 'NASA Exoplanet Archive ' +
               date, fontfamily='serif', fontsize=14, weight='normal',ha='right')
-    _fig.text(0.6, dist_from_bottom, 'Created by: Ted Johnson (UNLV, GSFC)',
-              fontfamily='serif', fontsize=14, ha='left', weight='normal')
+    if credit:
+        _fig.text(0.6, dist_from_bottom, 'Created by: Ted Johnson (UNLV, GSFC)',
+                fontfamily='serif', fontsize=14, ha='left', weight='normal')
 
     return _fig, _ax
 
@@ -169,7 +172,8 @@ def plot(
     plot_mirecle: bool,
     plot_hwo: bool,
     size_func: Callable,
-    _alpha: float
+    _alpha: float,
+    method:str
 ):
     """
     Plot the data.
@@ -202,18 +206,28 @@ def plot(
     )
     x_kw = 'sy_dist'
     y_kw = 'pl_approx_insol'
+    c_kw = 'st_teff'
     size_kw = 'pl_bmasse'
 
-    _ax.scatter(_df.loc[~is_transit, x_kw], (_df.loc[~is_transit, y_kw]),
-                label='Non-Transiting', c='C0', s=size_func(_df.loc[~is_transit, size_kw]), alpha=_alpha)
-    _ax.scatter(_df.loc[is_transit, x_kw], (_df.loc[is_transit, y_kw]), label='Transiting',
-                c='C4', s=size_func(_df.loc[is_transit, size_kw]), alpha=_alpha)
+    if method == 'transit':
+        _ax.scatter(_df.loc[~is_transit, x_kw], (_df.loc[~is_transit, y_kw]),
+                    label='Non-Transiting', c='C0', s=size_func(_df.loc[~is_transit, size_kw]), alpha=_alpha)
+        _ax.scatter(_df.loc[is_transit, x_kw], (_df.loc[is_transit, y_kw]), label='Transiting',
+                    c='C4', s=size_func(_df.loc[is_transit, size_kw]), alpha=_alpha)
+    elif method == 'teff':
+        im = _ax.scatter(
+            _df.loc[:, x_kw], _df.loc[:, y_kw], c=_df.loc[:, c_kw], s=size_func(_df.loc[:, size_kw]), alpha=_alpha,cmap='gist_heat',
+            edgecolors='k'
+        )
+        _ax.get_figure().colorbar(im, ax=_ax, label='Stellar Effective Temperature (K)', pad=0.01,fraction=0.05)
+    else:
+        raise ValueError(f'Unknown method: {method}')
     if plot_mirecle:
         _ax.scatter(_df.loc[in_mirecle, x_kw], _df.loc[in_mirecle, y_kw], label='MIRECLE Targets', facecolors='none',
-                    edgecolors='k', linewidth=1.5, s=size_func(_df.loc[in_mirecle, size_kw]), alpha=_alpha)
+                    edgecolors='k', linewidth=2, s=size_func(_df.loc[in_mirecle, size_kw]), alpha=_alpha)
     if plot_hwo:
         _ax.scatter(_df.loc[in_hwo, x_kw], _df.loc[in_hwo, y_kw], label='HWO Targets', facecolors='none',
-                    edgecolors='k', linewidth=1.5, s=size_func(_df.loc[in_hwo, size_kw]), alpha=_alpha)
+                    edgecolors='k', linewidth=2, s=size_func(_df.loc[in_hwo, size_kw]), alpha=_alpha)
     _ax.scatter(np.nan, -1, label='Mars-mass', c='k',
                 s=size_func(0.107), alpha=_alpha)
     _ax.scatter(np.nan, -1, label='Earth-mass',
@@ -265,7 +279,7 @@ def add_solar_system_planets(_ax: plt.Axes):
     _ax.set_yscale('log')
 
 
-def add_legend(_ax: plt.Axes, size_func: Callable):
+def add_legend(_ax: plt.Axes, size_func: Callable,method:str):
     """
     Add the legend.
 
@@ -279,8 +293,9 @@ def add_legend(_ax: plt.Axes, size_func: Callable):
     lgnd = _ax.legend(prop={'size': 14, 'family': 'serif'},
                       framealpha=0.7, loc='lower right')
     legend_marker_size = size_func(2)
-    lgnd.legend_handles[0]._sizes = [legend_marker_size]
-    lgnd.legend_handles[1]._sizes = [legend_marker_size]
+    if method == 'transit':
+        lgnd.legend_handles[0]._sizes = [legend_marker_size]
+        lgnd.legend_handles[1]._sizes = [legend_marker_size]
 
 
 def add_labels(_ax: plt.Axes,max_dist: float):
@@ -328,6 +343,10 @@ if __name__ in '__main__':
                         help='Include MIRECLE target list')
     parser.add_argument('--hwo', action='store_true',
                         help='Include HWO target list')
+    parser.add_argument('--method', type=str,
+                        default='transit', help='Method to choose colors. Can be `transit` or `teff`')
+    parser.add_argument('--no_credit', action='store_true',
+                        help='Do not include credit in the figure. Only Ted is allowed to use this one.')
 
     args = parser.parse_args()
 
@@ -341,8 +360,10 @@ if __name__ in '__main__':
     )
 
     print_demographics(df)
+    
+    print(df[['pl_name','st_teff','pl_approx_insol','pl_eqt','tran_flag','pl_orbper','pl_bmasse','sy_dist']])
 
-    fig, ax = setup_fig()
+    fig, ax = setup_fig(not args.no_credit)
 
     alpha = args.alpha  # transparency
 
@@ -363,9 +384,9 @@ if __name__ in '__main__':
         k = 30*args.size  # scales size of markers
         return k*mass
 
-    plot(df, ax, args.mirecle, args.hwo, size, alpha)
+    plot(df, ax, args.mirecle, args.hwo, size, alpha, args.method)
     add_solar_system_planets(ax)
-    add_legend(ax, size)
+    add_legend(ax, size, args.method)
     add_labels(ax, args.max_dist)
 
     fig.savefig(args.output, dpi=120)
