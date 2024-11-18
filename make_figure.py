@@ -17,6 +17,10 @@ from matplotlib import rc
 import pandas as pd
 import requests
 
+TRANSIT_COLOR = 'DE5126'
+NONTRANSIT_COLOR = '458977'
+LINE_COLOR = '#9E5842'
+
 
 def build_query(max_teff: int, max_dist: float) -> str:
     """
@@ -152,7 +156,10 @@ def setup_fig(credit=True):
     """
     plt.style.use('bmh')
     rc('font', weight='bold')
-    _fig, _ax = plt.subplots(1, 1, figsize=(12.5, 7))
+    _fig, _axes, = plt.subplots(1, 2, figsize=(12.5, 7),width_ratios=[30,1])
+    _fig.subplots_adjust(wspace=0.0)
+    _ax = _axes[0]
+    _cbarax = _axes[1]
     _ax.tick_params(axis='both', which='major', labelsize=14)
 
     date = datetime.now().strftime("%Y-%m-%d")
@@ -163,12 +170,13 @@ def setup_fig(credit=True):
         _fig.text(0.6, dist_from_bottom, 'Created by: Ted Johnson (UNLV, GSFC)',
                 fontfamily='serif', fontsize=14, ha='left', weight='normal')
 
-    return _fig, _ax
+    return _fig, _ax, _cbarax
 
 
 def plot(
     _df: pd.DataFrame,
     _ax: plt.Axes,
+    _cbar_ax: plt.Axes,
     plot_mirecle: bool,
     plot_hwo: bool,
     size_func: Callable,
@@ -211,15 +219,16 @@ def plot(
 
     if method == 'transit':
         _ax.scatter(_df.loc[~is_transit, x_kw], (_df.loc[~is_transit, y_kw]),
-                    label='Non-Transiting', c='C0', s=size_func(_df.loc[~is_transit, size_kw]), alpha=_alpha)
+                    label='Non-Transiting', c=f'#{NONTRANSIT_COLOR}', s=size_func(_df.loc[~is_transit, size_kw]), alpha=_alpha)
         _ax.scatter(_df.loc[is_transit, x_kw], (_df.loc[is_transit, y_kw]), label='Transiting',
-                    c='C4', s=size_func(_df.loc[is_transit, size_kw]), alpha=_alpha)
+                    c=f'#{TRANSIT_COLOR}', s=size_func(_df.loc[is_transit, size_kw]), alpha=_alpha)
+        _cbar_ax.set_axis_off()
     elif method == 'teff':
         im = _ax.scatter(
             _df.loc[:, x_kw], _df.loc[:, y_kw], c=_df.loc[:, c_kw], s=size_func(_df.loc[:, size_kw]), alpha=_alpha,cmap='gist_heat',
             edgecolors='k'
         )
-        _ax.get_figure().colorbar(im, ax=_ax, label='Stellar Effective Temperature (K)', pad=0.01,fraction=0.05)
+        _ax.get_figure().colorbar(im, ax=_ax,cax=_cbar_ax, label='Stellar Effective Temperature (K)', pad=0.01,fraction=0.05,shrink=0.5)
     else:
         raise ValueError(f'Unknown method: {method}')
     if plot_mirecle:
@@ -255,7 +264,7 @@ def add_solar_system_planets(_ax: plt.Axes):
     rot = 0
     fontsize = 13
     _alpha = 1
-    color = 'xkcd:terracotta'
+    color = LINE_COLOR
     zorder = -100
 
     a_venus = 0.723  # AU
@@ -362,8 +371,9 @@ if __name__ in '__main__':
     print_demographics(df)
     
     print(df[['pl_name','st_teff','pl_approx_insol','pl_eqt','tran_flag','pl_orbper','pl_bmasse','sy_dist']])
+    df.to_csv('nearby_exoplanets.csv')
 
-    fig, ax = setup_fig(not args.no_credit)
+    fig, ax, cbarax = setup_fig(not args.no_credit)
 
     alpha = args.alpha  # transparency
 
@@ -384,9 +394,13 @@ if __name__ in '__main__':
         k = 30*args.size  # scales size of markers
         return k*mass
 
-    plot(df, ax, args.mirecle, args.hwo, size, alpha, args.method)
+    plot(df, ax, cbarax, args.mirecle, args.hwo, size, alpha, args.method)
     add_solar_system_planets(ax)
     add_legend(ax, size, args.method)
     add_labels(ax, args.max_dist)
+    
+    # ticks = [0.1,0.5,1,2,5,10,100]
+    # ax.set_yticks(ticks)
+    # ax.set_yticklabels(ticks)
 
-    fig.savefig(args.output, dpi=120)
+    fig.savefig(args.output, dpi=200)
