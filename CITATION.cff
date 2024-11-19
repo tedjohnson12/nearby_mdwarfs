@@ -1,0 +1,28 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Nearby Exoplanets
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Ted
+    family-names: Johnson
+    email: ted.johnson@unlv.edu
+    affiliation: 'UNLV, GSFC'
+    orcid: 'https://orcid.org/0000-0002-1570-2203'
+repository-code: 'https://github.com/tedjohnson12/nearby_mdwarfs'
+abstract: >-
+  This code plots exoplanets in the solar neighborhood
+  according to their distance and stellar insolation flux.
+  It is designed to be interactive and help visualize the
+  potential to characterize the atmospheres of nearby rocky
+  exoplanets in the habitable zones of M-dwarfs.
+keywords:
+  - Exoplanets
+  - M-dwarf
+  - Habitability
+  - Visualization
+license: CC-BY-4.0
