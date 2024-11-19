@@ -172,16 +172,125 @@ def setup_fig(credit=True):
 
     return _fig, _ax, _cbarax
 
-
-def plot(
+def get_data_dicts(
     _df: pd.DataFrame,
-    _ax: plt.Axes,
-    _cbar_ax: plt.Axes,
     plot_mirecle: bool,
     plot_hwo: bool,
     size_func: Callable,
     _alpha: float,
     method:str
+):
+    """
+    Get data for plotting.
+    """
+    if plot_hwo and plot_mirecle:
+        raise ValueError('Please only choose one of HWO or MIRECLE.')
+    is_transit = _df['tran_flag'].values.astype('bool')
+    mirecle_target_list = get_mirecle_targets()
+    hwo_target_list = get_hwo_targets()
+    in_mirecle = _df.loc[:, 'pl_name'].isin(mirecle_target_list['name'])
+    in_hwo = (
+        _df.loc[:, 'hip_name'].isin(hwo_target_list['ID(HIP)'])
+        | _df.loc[:, 'hd_name'].isin(hwo_target_list['ID(HD)'])
+        | _df.loc[:, 'hostname'].isin(hwo_target_list['Common Name'])
+    )
+    x_kw = 'sy_dist'
+    y_kw = 'pl_approx_insol'
+    c_kw = 'st_teff'
+    size_kw = 'pl_bmasse'
+    data = []
+    
+    if method == 'transit':
+        data.append(
+            {
+                'x': _df.loc[~is_transit, x_kw],
+                'y': (_df.loc[~is_transit, y_kw]),
+                'label':'Non-transiting',
+                'c' : f'#{NONTRANSIT_COLOR}',
+                's' : size_func(_df.loc[~is_transit, size_kw]),
+                'alpha' : _alpha
+            })
+        data.append({
+                'x': _df.loc[is_transit, x_kw],
+                'y': (_df.loc[is_transit, y_kw]),
+                'label':'Transiting',
+                'c' : f'#{TRANSIT_COLOR}',
+                's' : size_func(_df.loc[is_transit, size_kw]),
+                'alpha' : _alpha
+            })
+    elif method == 'teff':
+        data.append({
+                'x': _df.loc[:, x_kw],
+                'y': _df.loc[:, y_kw],
+                'c': _df.loc[:, c_kw],
+                's': size_func(_df.loc[:, size_kw]),
+                'alpha': _alpha,
+                'cmap':'gist_heat',
+                'edgecolors':'k'
+            })
+    else:
+        raise ValueError('Please choose a valid method.')
+    
+    if plot_mirecle:
+        data.append({
+                'x': _df.loc[in_mirecle, x_kw],
+                'y': (_df.loc[in_mirecle, y_kw]),
+                'label':'MIRECLE Targets',
+                'facecolors': 'none',
+                'edgecolors': 'k',
+                'linewidth':2,
+                's': size_func(_df.loc[in_mirecle, size_kw]),
+                'alpha' : _alpha
+            })
+
+    if plot_hwo:
+        data.append({
+                'x': _df.loc[in_hwo, x_kw],
+                'y': (_df.loc[in_hwo, y_kw]),
+                'label':'HWO Targets',
+                'facecolors': 'none',
+                'edgecolors': 'k',
+                'linewidth':2,
+                's': size_func(_df.loc[in_hwo, size_kw]),
+                'alpha' : _alpha
+            })
+    data.append({
+        'x': np.nan,
+        'y': -1,
+        'label': 'Mars-mass',
+        'c': 'k',
+        's': size_func(0.107),
+        'alpha': _alpha
+    })
+    data.append({
+        'x': np.nan,
+        'y': -1,
+        'label': 'Earth-mass',
+        'c': 'k',
+        's': size_func(1),
+        'alpha': _alpha
+    })
+    data.append({
+        'x': np.nan,
+        'y': -1,
+        'label': 'Neptune-mass',
+        'c': 'k',
+        's': size_func(17.15),
+        'alpha': _alpha
+    })
+    return data
+
+
+def plot(
+    _df: pd.DataFrame,
+    plot_mirecle: bool,
+    plot_hwo: bool,
+    size_func: Callable,
+    _alpha: float,
+    method:str,
+    max_dist: float,
+    credit: bool,
+    output: str
 ):
     """
     Plot the data.
@@ -200,49 +309,27 @@ def plot(
         The function to determine the marker size
     _alpha : float
         The marker transparency
-    """
-    if plot_hwo and plot_mirecle:
-        raise ValueError('Please only choose one of HWO or MIRECLE.')
-    is_transit = _df['tran_flag'].values.astype('bool')
-    mirecle_target_list = get_mirecle_targets()
-    hwo_target_list = get_hwo_targets()
-    in_mirecle = _df.loc[:, 'pl_name'].isin(mirecle_target_list['name'])
-    in_hwo = (
-        _df.loc[:, 'hip_name'].isin(hwo_target_list['ID(HIP)'])
-        | _df.loc[:, 'hd_name'].isin(hwo_target_list['ID(HD)'])
-        | _df.loc[:, 'hostname'].isin(hwo_target_list['Common Name'])
-    )
-    x_kw = 'sy_dist'
-    y_kw = 'pl_approx_insol'
-    c_kw = 'st_teff'
-    size_kw = 'pl_bmasse'
-
-    if method == 'transit':
-        _ax.scatter(_df.loc[~is_transit, x_kw], (_df.loc[~is_transit, y_kw]),
-                    label='Non-Transiting', c=f'#{NONTRANSIT_COLOR}', s=size_func(_df.loc[~is_transit, size_kw]), alpha=_alpha)
-        _ax.scatter(_df.loc[is_transit, x_kw], (_df.loc[is_transit, y_kw]), label='Transiting',
-                    c=f'#{TRANSIT_COLOR}', s=size_func(_df.loc[is_transit, size_kw]), alpha=_alpha)
+    """    
+    data = get_data_dicts(_df, plot_mirecle, plot_hwo, size_func, _alpha, method)
+    
+    
+    fig, _ax, _cbar_ax = setup_fig(credit)
+    fig: plt.Figure
+    _ax: plt.Axes
+    _cbar_ax: plt.Axes
+    turn_off_cbar = True
+    for d in data:
+        _im = _ax.scatter(**d)
+        if 'cmap' in d:
+            _ax.get_figure().colorbar(_im, ax=_ax,cax=_cbar_ax, label='Stellar Effective Temperature (K)', pad=0.01,fraction=0.05,shrink=0.5)
+            turn_off_cbar = False
+    if turn_off_cbar:
         _cbar_ax.set_axis_off()
-    elif method == 'teff':
-        im = _ax.scatter(
-            _df.loc[:, x_kw], _df.loc[:, y_kw], c=_df.loc[:, c_kw], s=size_func(_df.loc[:, size_kw]), alpha=_alpha,cmap='gist_heat',
-            edgecolors='k'
-        )
-        _ax.get_figure().colorbar(im, ax=_ax,cax=_cbar_ax, label='Stellar Effective Temperature (K)', pad=0.01,fraction=0.05,shrink=0.5)
-    else:
-        raise ValueError(f'Unknown method: {method}')
-    if plot_mirecle:
-        _ax.scatter(_df.loc[in_mirecle, x_kw], _df.loc[in_mirecle, y_kw], label='MIRECLE Targets', facecolors='none',
-                    edgecolors='k', linewidth=2, s=size_func(_df.loc[in_mirecle, size_kw]), alpha=_alpha)
-    if plot_hwo:
-        _ax.scatter(_df.loc[in_hwo, x_kw], _df.loc[in_hwo, y_kw], label='HWO Targets', facecolors='none',
-                    edgecolors='k', linewidth=2, s=size_func(_df.loc[in_hwo, size_kw]), alpha=_alpha)
-    _ax.scatter(np.nan, -1, label='Mars-mass', c='k',
-                s=size_func(0.107), alpha=_alpha)
-    _ax.scatter(np.nan, -1, label='Earth-mass',
-                c='k', s=size_func(1), alpha=_alpha)
-    _ax.scatter(np.nan, -1, label='Neptune-mass',
-                c='k', s=size_func(17.15), alpha=_alpha)
+    
+    add_solar_system_planets(_ax)
+    add_legend(_ax, size_func, method)
+    add_labels(_ax, max_dist)
+    fig.savefig(output, dpi=200)
 
 
 def add_solar_system_planets(_ax: plt.Axes):
@@ -373,7 +460,7 @@ if __name__ in '__main__':
     print(df[['pl_name','st_teff','pl_approx_insol','pl_eqt','tran_flag','pl_orbper','pl_bmasse','sy_dist']])
     df.to_csv('nearby_exoplanets.csv')
 
-    fig, ax, cbarax = setup_fig(not args.no_credit)
+    
 
     alpha = args.alpha  # transparency
 
@@ -394,13 +481,10 @@ if __name__ in '__main__':
         k = 30*args.size  # scales size of markers
         return k*mass
 
-    plot(df, ax, cbarax, args.mirecle, args.hwo, size, alpha, args.method)
-    add_solar_system_planets(ax)
-    add_legend(ax, size, args.method)
-    add_labels(ax, args.max_dist)
+    plot(df, args.mirecle, args.hwo, size, alpha, args.method, args.max_dist, not args.no_credit,args.output)
     
     # ticks = [0.1,0.5,1,2,5,10,100]
     # ax.set_yticks(ticks)
     # ax.set_yticklabels(ticks)
 
-    fig.savefig(args.output, dpi=200)
+    
