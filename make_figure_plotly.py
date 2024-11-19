@@ -66,6 +66,37 @@ def main(
     target_list: str,
     method: str,
 )-> go.Figure:
+    """
+    Make the figure with the given parameters.
+    
+    Parameters
+    ----------
+    max_teff : int
+        The maximum effective temperature in K
+    max_dist : float
+        The maximum distance in parsecs
+    max_period : float
+        The maximum orbital period
+    max_mass : float
+        The maximum planet mass
+    max_insolation : float
+        The maximum insolation
+    size : float
+        A scalar for the marker size.
+    alpha : float
+        The transparency of the markers
+    target_list : str
+        'mirecle', 'hwo', or 'none'
+    method : str
+        How to decide on marker colors. 'transit' to separate them into
+        transiting and non-transiting planets. 'teff' to color by stellar
+        effective temperature.
+    
+    Returns
+    -------
+    go.Figure
+        The plotly figure.
+    """
     
     def get_size(mass: float):
         """

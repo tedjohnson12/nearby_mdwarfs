@@ -38,3 +38,50 @@ options:
 
 Created by: Ted Johnson (GSFC 693) in Oct 2022, uploaded to Github 2023-04-07
 ```
+
+### Plotly Implementation
+
+This is for web apps.
+
+The original code has been rewritten to generate a plotly figure. If you use a Python-based web infrastructure like ``Django``, you can just
+
+```
+from make_figure_plotly import main
+fig = main(...)
+```
+
+You can find the documentation of this function in the source code, or in the terminal by running:
+
+```
+$ python3 -c "from make_figure_plotly import main;print(main.__doc__)"
+  Make the figure with the given parameters.
+    
+    Parameters
+    ----------
+    max_teff : int
+        The maximum effective temperature in K
+    max_dist : float
+        The maximum distance in parsecs
+    max_period : float
+        The maximum orbital period
+    max_mass : float
+        The maximum planet mass
+    max_insolation : float
+        The maximum insolation
+    size : float
+        A scalar for the marker size.
+    alpha : float
+        The transparency of the markers
+    target_list : str
+        'mirecle', 'hwo', or 'none'
+    method : str
+        How to decide on marker colors. 'transit' to separate them into
+        transiting and non-transiting planets. 'teff' to color by stellar
+        effective temperature.
+    
+    Returns
+    -------
+    go.Figure
+        The plotly figure.
+
+```
