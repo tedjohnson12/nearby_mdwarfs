@@ -447,6 +447,16 @@ if __name__ in '__main__':
     args = parser.parse_args()
 
     df = get_data(args.max_teff, args.max_dist)
+    
+    if len(df) == 0:
+        s = f"""There were no exoplanets found with the following parameters:
+        Maximum stellar effective temperature: {args.max_teff} K
+        Maximum distance: {args.max_dist} pc
+        Maximum orbital period: {args.max_period} days
+        Maximum planet mass: {args.max_mass} Earth masses
+        Maximum planet insolation: {args.max_insol} Earth fluxes
+        """
+        raise RuntimeError(s)
 
     df = apply_corrections(
         df,
